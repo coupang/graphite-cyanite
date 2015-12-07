@@ -1,5 +1,6 @@
 import itertools
 import time
+import pylru
 
 try:
     from graphite_api.intervals import Interval, IntervalSet
@@ -50,7 +51,7 @@ class URLs(object):
         return '{0}/metrics'.format(self.host)
 urls = None
 urllength = 8000
-
+leafcache = pylru.lrucache(10000)
 
 class CyaniteReader(object):
     __slots__ = ('path',)
@@ -96,22 +97,27 @@ class CyaniteFinder(object):
         urls = URLs(urls)
 
     def find_nodes(self, query):
-        paths = requests.get(urls.paths,
+        leafpath = leafcache.get(query.pattern);
+        if leafpath:
+            yield CyaniteLeafNode(leafpath, CyaniteReader(leafpath))
+        else:
+            paths = requests.get(urls.paths,
                              params={'query': query.pattern}).json()
-        for path in paths:
-            if path['leaf']:
-                yield CyaniteLeafNode(path['path'],
+            for path in paths:
+                if path['leaf']:
+                    leafcache[path['path']] = path['path']
+                    yield CyaniteLeafNode(path['path'],
                                       CyaniteReader(path['path']))
-            else:
-                yield BranchNode(path['path'])
+                else:
+                    yield BranchNode(path['path'])
 
     def fetch_multi(self, nodes, start_time, end_time):
 
         paths = [node.path for node in nodes]
         data = {}
         for pathlist in chunk(paths, urllength):
-            tmpdata = requests.get(urls.metrics,
-                                   params={'path': pathlist,
+            tmpdata = requests.post(urls.metrics,
+                                   data={'path': pathlist,
                                            'from': start_time,
                                            'to': end_time}).json()
             if 'error' in tmpdata:
