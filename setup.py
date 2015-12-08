@@ -26,6 +26,7 @@ setup(
     ),
     install_requires=(
         'requests',
+        'pylru',
     ),
     test_suite='tests',
 )
