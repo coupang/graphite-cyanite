@@ -3,8 +3,8 @@ from setuptools import setup
 
 setup(
     name='cyanite',
-    version='0.4.6',
-    url='https://github.com/brutasse/graphite-cyanite',
+    version='0.4.7',
+    url='https://github.com/coupang/graphite-cyanite',
     license='BSD',
     author=u'Bruno Renié',
     author_email='bruno@renie.fr',
