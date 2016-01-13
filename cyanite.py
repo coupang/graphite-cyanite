@@ -99,13 +99,13 @@ class CyaniteFinder(object):
     def find_nodes(self, query):
         leafpath = leafcache.get(query.pattern);
         if leafpath:
-            yield CyaniteLeafNode(leafpath, CyaniteReader(leafpath))
+            yield CyaniteLeafNode(query.pattern, CyaniteReader(query.pattern))
         else:
             paths = requests.get(urls.paths,
                              params={'query': query.pattern}).json()
             for path in paths:
                 if path['leaf']:
-                    leafcache[path['path']] = path['path']
+                    leafcache[path['path']] = True
                     yield CyaniteLeafNode(path['path'],
                                       CyaniteReader(path['path']))
                 else:
