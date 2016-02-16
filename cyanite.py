@@ -102,7 +102,7 @@ class CyaniteFinder(object):
             yield CyaniteLeafNode(query.pattern, CyaniteReader(query.pattern))
         else:
             paths = requests.get(urls.paths,
-                             params={'query': query.pattern}).json()
+                             params={'query': query.pattern}, timeout=2).json()
             for path in paths:
                 if path['leaf']:
                     leafcache[path['path']] = True
@@ -119,7 +119,7 @@ class CyaniteFinder(object):
             tmpdata = requests.post(urls.metrics,
                                    data={'path': pathlist,
                                            'from': start_time,
-                                           'to': end_time}).json()
+                                           'to': end_time}, timeout=10).json()
             if 'error' in tmpdata:
                 return (start_time, end_time, end_time - start_time), {}
 
