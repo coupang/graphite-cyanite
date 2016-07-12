@@ -52,6 +52,8 @@ class URLs(object):
 urls = None
 urllength = 8000
 leafcache = pylru.lrucache(10000)
+find_timeout = 3
+fetch_timeout = 10
 
 class CyaniteReader(object):
     __slots__ = ('path',)
@@ -81,6 +83,8 @@ class CyaniteFinder(object):
     def __init__(self, config=None):
         global urls
         global urllength
+        global find_timeout
+        global fetch_timeout
         if config is not None:
             if 'urls' in config['cyanite']:
                 urls = config['cyanite']['urls']
@@ -88,6 +92,10 @@ class CyaniteFinder(object):
                 urls = [config['cyanite']['url'].strip('/')]
             if 'urllength' in config['cyanite']:
                 urllength = config['cyanite']['urllength']
+            if 'find_timeout' in config['cyanite']:
+                find_timeout = config['cyanite']['find_timeout']
+            if 'fetch_timeout' in config['cyanite']:
+                fetch_timeout = config['cyanite']['fetch_timeout']
         else:
             from django.conf import settings
             urls = getattr(settings, 'CYANITE_URLS')
@@ -102,7 +110,7 @@ class CyaniteFinder(object):
             yield CyaniteLeafNode(query.pattern, CyaniteReader(query.pattern))
         else:
             paths = requests.get(urls.paths,
-                             params={'query': query.pattern}, timeout=2).json()
+                             params={'query': query.pattern}, timeout=find_timeout).json()
             for path in paths:
                 if path['leaf']:
                     leafcache[path['path']] = True
@@ -119,7 +127,7 @@ class CyaniteFinder(object):
             tmpdata = requests.post(urls.metrics,
                                    data={'path': pathlist,
                                            'from': start_time,
-                                           'to': end_time}, timeout=10).json()
+                                           'to': end_time}, timeout=fetch_timeout).json()
             if 'error' in tmpdata:
                 return (start_time, end_time, end_time - start_time), {}
 
